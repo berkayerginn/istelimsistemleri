@@ -1,0 +1,50 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <pthread.h>
+
+#define BUFFER_SIZE 10
+
+int buffer[BUFFER_SIZE];
+int sayac = 0;
+
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+
+void *uretici(void *arg)
+{
+    int i;
+
+    for (i = 1; i <= 10; i++) {
+        pthread_mutex_lock(&mutex);
+
+        // Buffer dolu ise bekle
+        while (sayac == BUFFER_SIZE) {
+            pthread_cond_wait(&cond, &mutex);
+        }
+
+        // Buffera veri ekle
+        buffer[sayac] = i;
+        sayac++;
+
+        printf("Üretici: %d\n", i);
+
+        pthread_cond_signal(&cond);
+        pthread_mutex_unlock(&mutex);
+
+        sleep(1);
+    }
+
+    pthread_exit(NULL);
+}
+
+int main()
+{
+    pthread_t uretici_thread;
+
+    pthread_create(&uretici_thread, NULL, uretici, NULL);
+
+    pthread_join(uretici_thread, NULL);
+
+    return 0;
+}

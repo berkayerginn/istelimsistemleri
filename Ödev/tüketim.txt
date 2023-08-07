@@ -1,0 +1,50 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <pthread.h>
+
+#define BUFFER_SIZE 10
+
+int buffer[BUFFER_SIZE];
+int sayac = 0;
+
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+
+void *tuketici(void *arg)
+{
+    int i, data;
+
+    for (i = 1; i <= 10; i++) {
+        pthread_mutex_lock(&mutex);
+
+        // Buffer boş ise bekle
+        while (sayac == 0) {
+            pthread_cond_wait(&cond, &mutex);
+        }
+
+        // Bufferdan veri al
+        sayac--;
+        data = buffer[sayac];
+
+        printf("Tüketici: %d\n", data);
+
+        pthread_cond_signal(&cond);
+        pthread_mutex_unlock(&mutex);
+
+        sleep(1);
+    }
+
+    pthread_exit(NULL);
+}
+
+int main()
+{
+    pthread_t tuketici_thread;
+
+    pthread_create(&tuketici_thread, NULL, tuketici, NULL);
+
+    pthread_join(tuketici_thread, NULL);
+
+    return 0;
+}
